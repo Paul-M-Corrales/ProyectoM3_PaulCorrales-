@@ -1,0 +1,17 @@
+{
+  "name": "m3",
+  "version": "1.0.0",
+  "description": "Proyecto Integrador M3 - CHRONOS",
+  "main": "index.js",
+  "scripts": {
+    "test": "vitest",
+    "test:run": "vitest run"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "devDependencies": {
+    "vitest": "^5.0.0"
+  }
+}
