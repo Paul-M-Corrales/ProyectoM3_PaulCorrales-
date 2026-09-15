@@ -1,25 +1,39 @@
-export async function sendMessageToAI({ character, language, messages }) {
-  const response = await fetch("/api/functions", {
-    method: "POST",
+const conversations = {
+  howard: [],
+  tony: [],
+  jarvis: [],
+};
 
-    headers: {
-      "Content-Type": "application/json",
-    },
+export function getConversation(characterId) {
+  return conversations[characterId] || [];
+}
 
-    body: JSON.stringify({
-      character,
-      language,
-      messages,
-    }),
-  });
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(
-      data?.error || data?.message || "No se pudo obtener una respuesta.",
-    );
+export function addMessage(characterId, message) {
+  if (!conversations[characterId]) {
+    conversations[characterId] = [];
   }
 
-  return data;
+  conversations[characterId].push(message);
+}
+
+export function clearConversation(characterId) {
+  conversations[characterId] = [];
+}
+
+export function createUserMessage(content) {
+  return {
+    id: crypto.randomUUID(),
+    role: "user",
+    content,
+    timestamp: new Date().toISOString(),
+  };
+}
+
+export function createAssistantMessage(content) {
+  return {
+    id: crypto.randomUUID(),
+    role: "assistant",
+    content,
+    timestamp: new Date().toISOString(),
+  };
 }

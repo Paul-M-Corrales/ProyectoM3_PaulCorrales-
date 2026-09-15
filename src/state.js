@@ -9,7 +9,7 @@ resetTokenUsageIfNeeded();
 export const state = {
   language: localStorage.getItem("chronos-language") || "es",
 
-  selectedCharacter: localStorage.getItem("chronos-character") || "tony",
+  selectedCharacter: localStorage.getItem("chronos-character") || null,
 
   tokenUsage: getTokenUsage(),
 

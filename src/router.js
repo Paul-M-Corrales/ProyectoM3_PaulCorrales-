@@ -1,6 +1,12 @@
 import { state } from "./state.js";
 import { characters } from "./characters.js";
 import { translations } from "./translations.js";
+import {
+  getConversation,
+  addMessage,
+  createUserMessage,
+  createAssistantMessage,
+} from "./chat.js";
 
 const routes = {
   "/": renderIntro,
@@ -41,6 +47,62 @@ export function router() {
     ${renderTokenBar()}
     ${renderView()}
   `;
+  if (path === "/chat" && state.selectedCharacter) {
+    setupChat();
+  }
+}
+function setupChat() {
+  const form = document.querySelector("#chat-form");
+
+  const input = document.querySelector("#chat-input");
+
+  const messagesContainer = document.querySelector("#chat-messages");
+
+  if (!form || !input || !messagesContainer) {
+    return;
+  }
+
+  scrollChatToBottom();
+
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+
+    const content = input.value.trim();
+
+    if (!content) {
+      return;
+    }
+
+    const characterId = state.selectedCharacter;
+
+    const userMessage = createUserMessage(content);
+
+    addMessage(characterId, userMessage);
+
+    // Respuesta temporal.
+    // Después esto lo reemplaza Gemini.
+    const temporaryResponse = createAssistantMessage(
+      state.language === "es"
+        ? "Recibí tu mensaje. En el próximo paso esta respuesta vendrá de Gemini."
+        : "I received your message. In the next step this response will come from Gemini.",
+    );
+
+    addMessage(characterId, temporaryResponse);
+
+    router();
+  });
+}
+
+function scrollChatToBottom() {
+  requestAnimationFrame(() => {
+    const messagesContainer = document.querySelector("#chat-messages");
+
+    if (!messagesContainer) {
+      return;
+    }
+
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+  });
 }
 
 function setupIntro() {
@@ -280,35 +342,118 @@ function renderHome() {
   return `
     <main class="home-page">
 
-      <section class="hero">
+      <section class="home-intro">
 
         <p class="eyebrow">
           ${t.heroEyebrow}
         </p>
 
         <h1>
-          ${t.heroTitle}
+          CHRONOS
         </h1>
 
-        <p class="hero-subtitle">
-          ${t.heroSubtitle}
-        </p>
-
-        <p class="hero-question">
-          ${t.heroQuestion}
+        <p class="home-intro-text">
+          ${
+            state.language === "es"
+              ? "Tres épocas. Tres mentes. Una misma pregunta."
+              : "Three eras. Three minds. One question."
+          }
         </p>
 
       </section>
 
-      <section class="character-grid">
+      <section class="timeline-showcase">
 
         ${characters
-          .map((character) => renderCharacterCard(character))
+          .map((character, index) => renderCharacterShowcase(character, index))
           .join("")}
 
       </section>
 
+      <section class="home-chat-cta">
+
+        <p>
+          ${
+            state.language === "es"
+              ? "¿Listo para elegir con quién hablar?"
+              : "Ready to choose who you want to talk to?"
+          }
+        </p>
+
+        <a
+          href="/chat"
+          class="primary-cta"
+          data-link
+        >
+          ${state.language === "es" ? "IR AL CHAT" : "GO TO CHAT"}
+        </a>
+
+      </section>
+
     </main>
+  `;
+}
+function renderCharacterShowcase(character, index) {
+  const gallery = character.gallery || [];
+
+  const duplicatedGallery = [...gallery, ...gallery];
+
+  return `
+    <article class="character-showcase ${character.era}">
+
+      <div class="showcase-heading">
+
+        <span class="showcase-era">
+          ${character.year}
+        </span>
+
+        <h2>
+          ${character.name}
+        </h2>
+
+        <h3>
+          ${character.role[state.language]}
+        </h3>
+
+        <p>
+          ${character.description[state.language]}
+        </p>
+
+      </div>
+
+      <div
+        class="character-carousel ${
+          index % 2 === 0 ? "carousel-left" : "carousel-right"
+        }"
+      >
+
+        <div
+          class="carousel-track"
+          style="--carousel-speed: ${
+            index === 0 ? "26s" : index === 1 ? "18s" : "22s"
+          };"
+        >
+
+          ${duplicatedGallery
+            .map(
+              (image, imageIndex) => `
+                <div class="carousel-slide">
+
+                  <img
+                    src="${image}"
+                    alt="${character.name} ${(imageIndex % gallery.length) + 1}"
+                  />
+
+                </div>
+              `,
+            )
+            .join("")}
+
+        </div>
+
+      </div>
+
+    </article>
   `;
 }
 
@@ -352,7 +497,7 @@ function renderCharacterCard(character) {
         </h3>
 
         <p>
-          ${character.description[state.language]}
+          ${character.chatDescription[state.language]}
         </p>
 
       </div>
@@ -362,7 +507,19 @@ function renderCharacterCard(character) {
         class="character-button"
         data-character="${character.id}"
       >
-        ${t.enterChat}
+        ${
+          character.era === "past"
+            ? state.language === "es"
+              ? "VIAJAR AL PASADO"
+              : "TRAVEL TO THE PAST"
+            : character.era === "present"
+              ? state.language === "es"
+                ? "EXPLORAR EL PRESENTE"
+                : "EXPLORE THE PRESENT"
+              : state.language === "es"
+                ? "VIAJAR AL FUTURO"
+                : "TRAVEL TO THE FUTURE"
+        }
 
         <span>→</span>
       </button>
@@ -372,49 +529,236 @@ function renderCharacterCard(character) {
 }
 
 function renderChat() {
+  if (!state.selectedCharacter) {
+    return renderCharacterSelection();
+  }
+
+  return renderCharacterChat();
+}
+function renderCharacterSelection() {
   const t = translations[state.language];
 
-  const character =
-    characters.find((character) => character.id === state.selectedCharacter) ||
-    characters[1];
-
   return `
-    <main class="chat-selection-page">
+    <main class="character-selection-page">
 
-      <section class="chat-selection-heading">
+      <section class="character-selection-header">
 
         <p class="eyebrow">
-          ${character.year}
+          PAST · PRESENT · FUTURE
         </p>
 
         <h1>
-          ${character.name}
-        </h1>
+  ${
+    state.language === "es"
+      ? "¿A qué época querés viajar?"
+      : "Which era do you want to visit?"
+  }
+</h1>
 
         <p>
-          ${character.role[state.language]}
-        </p>
+  ${
+    state.language === "es"
+      ? "Pasado · Presente · Futuro. Elegí tu destino y comenzá la conversación."
+      : "Past · Present · Future. Choose your destination and begin the conversation."
+  }
+</p>
 
       </section>
 
-      <section class="chat-placeholder ${character.era}">
+      <section class="character-grid">
 
-        <p>
-          ${t.chatSubtitle}
-        </p>
-
-        <strong>
-          Chat con ${character.name}
-        </strong>
-
-        <span>
-          Próximo paso: conectar esta pantalla con Gemini.
-        </span>
+        ${characters
+          .map((character) => renderCharacterCard(character))
+          .join("")}
 
       </section>
 
     </main>
   `;
+}
+function renderCharacterChat() {
+  const character = characters.find(
+    (character) => character.id === state.selectedCharacter,
+  );
+
+  if (!character) {
+    state.selectedCharacter = null;
+    return renderCharacterSelection();
+  }
+
+  const messages = getConversation(character.id);
+
+  return `
+    <main class="chat-page">
+
+      <section class="chat-shell ${character.era}">
+
+        <header class="chat-character-header">
+
+          <button
+            type="button"
+            class="change-character-button"
+            data-change-character
+          >
+            ← ${
+              state.language === "es" ? "Cambiar destino" : "Change destination"
+            }
+          </button>
+
+          <div>
+            <span class="chat-year">
+              ${character.year}
+            </span>
+
+            <h1>
+              ${character.name}
+            </h1>
+
+            <p>
+              ${character.role[state.language]}
+            </p>
+          </div>
+
+        </header>
+
+        <div
+          id="chat-messages"
+          class="chat-messages"
+        >
+
+          ${
+            messages.length === 0
+              ? renderInitialMessage(character)
+              : messages
+                  .map((message) => renderMessage(message, character))
+                  .join("")
+          }
+
+        </div>
+
+        <form
+          id="chat-form"
+          class="chat-composer"
+        >
+
+          <input
+            id="chat-input"
+            type="text"
+            autocomplete="off"
+            placeholder="${
+              state.language === "es"
+                ? `Escribile a ${character.name}...`
+                : `Write to ${character.name}...`
+            }"
+          />
+
+          <button
+            type="submit"
+            class="chat-send-button"
+            aria-label="${
+              state.language === "es" ? "Enviar mensaje" : "Send message"
+            }"
+          >
+            ↑
+          </button>
+
+        </form>
+
+      </section>
+
+    </main>
+  `;
+}
+function renderInitialMessage(character) {
+  const messages = {
+    howard: {
+      es: "1943. Has llegado bastante lejos para hablar conmigo. ¿Qué asunto te trae al pasado?",
+      en: "1943. You've traveled quite a long way to speak with me. What brings you to the past?",
+    },
+
+    tony: {
+      es: "Bienvenido al presente. Decime qué problema tenemos y veamos cómo lo resolvemos.",
+      en: "Welcome to the present. Tell me what problem we're dealing with and let's figure it out.",
+    },
+
+    jarvis: {
+      es: "Conexión temporal establecida. Año 2099. ¿Qué desea conocer del futuro?",
+      en: "Temporal connection established. Year 2099. What would you like to know about the future?",
+    },
+  };
+
+  return `
+    <article class="message assistant-message">
+
+      <span class="message-author">
+        ${character.name}
+      </span>
+
+      <p>
+        ${messages[character.id][state.language]}
+      </p>
+
+    </article>
+  `;
+}
+
+function renderMessage(message, character) {
+  const isUser = message.role === "user";
+
+  const time = new Date(message.timestamp).toLocaleTimeString(
+    state.language === "es" ? "es-AR" : "en-US",
+    {
+      hour: "2-digit",
+      minute: "2-digit",
+    },
+  );
+
+  return `
+    <article
+      class="message ${isUser ? "user-message" : "assistant-message"}"
+    >
+
+      ${
+        !isUser
+          ? `
+            <video
+              class="character-response-video"
+              autoplay
+              muted
+              loop
+              playsinline
+            >
+              <source
+                src="${character.video}"
+                type="video/mp4"
+              />
+            </video>
+          `
+          : ""
+      }
+
+      <span class="message-author">
+        ${isUser ? (state.language === "es" ? "Vos" : "You") : character.name}
+      </span>
+
+      <p>
+        ${escapeHTML(message.content)}
+      </p>
+
+      <time>
+        ${time}
+      </time>
+
+    </article>
+  `;
+}
+
+function escapeHTML(text) {
+  const div = document.createElement("div");
+
+  div.textContent = text;
+
+  return div.innerHTML;
 }
 
 function renderAbout() {

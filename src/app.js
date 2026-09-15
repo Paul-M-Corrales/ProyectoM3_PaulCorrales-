@@ -21,6 +21,11 @@ export function setSelectedCharacter(characterId) {
 
   navigateTo("/chat");
 }
+export function clearSelectedCharacter() {
+  state.selectedCharacter = null;
+
+  localStorage.removeItem("chronos-character");
+}
 
 export function refreshTokenUsage() {
   updateTokenState();
@@ -44,7 +49,13 @@ document.addEventListener("click", (event) => {
   if (link) {
     event.preventDefault();
 
-    navigateTo(link.getAttribute("href"));
+    const url = link.getAttribute("href");
+
+    if (url === "/chat") {
+      clearSelectedCharacter();
+    }
+
+    navigateTo(url);
 
     return;
   }
@@ -56,7 +67,15 @@ document.addEventListener("click", (event) => {
 
     return;
   }
+  const changeCharacterButton = event.target.closest("[data-change-character]");
 
+  if (changeCharacterButton) {
+    clearSelectedCharacter();
+
+    router();
+
+    return;
+  }
   const characterButton = event.target.closest("[data-character]");
 
   if (characterButton) {
