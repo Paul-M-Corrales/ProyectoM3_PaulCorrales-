@@ -1194,6 +1194,80 @@ a {
 
   object-fit: cover;
 }
+.typing-message {
+  min-width: 90px;
+}
+
+.typing-dots {
+  display: flex;
+  align-items: center;
+
+  gap: 0.3rem;
+
+  min-height: 24px;
+}
+
+.typing-dots span {
+  width: 6px;
+  height: 6px;
+
+  border-radius: 50%;
+
+  background: currentColor;
+
+  opacity: 0.35;
+
+  animation: typingDot 1.2s infinite ease-in-out;
+}
+
+.typing-dots span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.typing-dots span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@keyframes typingDot {
+  0%,
+  60%,
+  100% {
+    opacity: 0.3;
+    transform: translateY(0);
+  }
+
+  30% {
+    opacity: 1;
+    transform: translateY(-4px);
+  }
+}
+
+.chat-error-message {
+  align-self: center;
+
+  max-width: 90%;
+
+  padding: 0.8rem 1rem;
+
+  border: 1px solid rgba(255, 100, 100, 0.3);
+
+  border-radius: 12px;
+
+  color: #ff9a9a;
+
+  background: rgba(255, 70, 70, 0.08);
+
+  font-size: 0.8rem;
+
+  text-align: center;
+}
+
+.chat-send-button:disabled,
+.chat-composer input:disabled {
+  opacity: 0.5;
+
+  cursor: not-allowed;
+}
 @media (min-width: 768px) {
   .intro-video {
     object-fit: cover;

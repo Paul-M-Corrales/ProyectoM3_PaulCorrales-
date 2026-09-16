@@ -1,12 +1,18 @@
-import { state } from "./state.js";
 import { characters } from "./characters.js";
 import { translations } from "./translations.js";
+import { state, updateTokenState } from "./state.js";
 import {
   getConversation,
   addMessage,
   createUserMessage,
   createAssistantMessage,
+  sendMessageToAI,
 } from "./chat.js";
+import {
+  addTokenUsage,
+  hasAvailableTokens,
+  getRemainingTokens,
+} from "./utils.js";
 
 const routes = {
   "/": renderIntro,
@@ -58,18 +64,29 @@ function setupChat() {
 
   const messagesContainer = document.querySelector("#chat-messages");
 
+  const sendButton = document.querySelector(".chat-send-button");
+
   if (!form || !input || !messagesContainer) {
     return;
   }
 
   scrollChatToBottom();
 
-  form.addEventListener("submit", (event) => {
+  form.addEventListener("submit", async (event) => {
     event.preventDefault();
 
     const content = input.value.trim();
 
     if (!content) {
+      return;
+    }
+    if (!hasAvailableTokens()) {
+      showChatError(
+        state.language === "es"
+          ? "Alcanzaste el límite diario de IA. La conexión temporal estará disponible nuevamente mañana."
+          : "You have reached the daily AI limit. The temporal connection will be available again tomorrow.",
+      );
+
       return;
     }
 
@@ -79,18 +96,161 @@ function setupChat() {
 
     addMessage(characterId, userMessage);
 
-    // Respuesta temporal.
-    // Después esto lo reemplaza Gemini.
-    const temporaryResponse = createAssistantMessage(
-      state.language === "es"
-        ? "Recibí tu mensaje. En el próximo paso esta respuesta vendrá de Gemini."
-        : "I received your message. In the next step this response will come from Gemini.",
-    );
+    input.value = "";
 
-    addMessage(characterId, temporaryResponse);
+    input.disabled = true;
 
-    router();
+    if (sendButton) {
+      sendButton.disabled = true;
+    }
+
+    renderCurrentConversation();
+
+    showTypingIndicator();
+
+    scrollChatToBottom();
+
+    try {
+      const conversation = getConversation(characterId);
+
+      const data = await sendMessageToAI({
+        character: characterId,
+        language: state.language,
+        messages: conversation,
+      });
+      const usedTokens = data?.usage?.totalTokens || 0;
+
+      if (usedTokens > 0) {
+        addTokenUsage(usedTokens);
+
+        updateTokenState();
+
+        refreshTokenBar();
+      }
+
+      const assistantMessage = createAssistantMessage(data.reply);
+
+      addMessage(characterId, assistantMessage);
+
+      removeTypingIndicator();
+
+      renderCurrentConversation();
+
+      scrollChatToBottom();
+
+      // En el siguiente paso vamos a usar:
+      // data.usage.totalTokens
+      // para actualizar el contador.
+    } catch (error) {
+      console.error(error);
+
+      removeTypingIndicator();
+
+      showChatError(
+        state.language === "es"
+          ? "No se pudo establecer la conexión temporal. Intentá nuevamente."
+          : "The temporal connection could not be established. Please try again.",
+      );
+    } finally {
+      input.disabled = false;
+
+      if (sendButton) {
+        sendButton.disabled = false;
+      }
+
+      input.focus();
+    }
   });
+}
+function refreshTokenBar() {
+  const currentTokenBar = document.querySelector(".ai-usage");
+
+  if (!currentTokenBar) {
+    return;
+  }
+
+  const wrapper = document.createElement("div");
+
+  wrapper.innerHTML = renderTokenBar().trim();
+
+  const newTokenBar = wrapper.firstElementChild;
+
+  if (!newTokenBar) {
+    return;
+  }
+
+  currentTokenBar.replaceWith(newTokenBar);
+}
+
+function renderCurrentConversation() {
+  const messagesContainer = document.querySelector("#chat-messages");
+
+  const character = characters.find(
+    (character) => character.id === state.selectedCharacter,
+  );
+
+  if (!messagesContainer || !character) {
+    return;
+  }
+
+  const messages = getConversation(character.id);
+
+  messagesContainer.innerHTML =
+    messages.length === 0
+      ? renderInitialMessage(character)
+      : messages.map((message) => renderMessage(message, character)).join("");
+}
+
+function showTypingIndicator() {
+  const messagesContainer = document.querySelector("#chat-messages");
+
+  const character = characters.find(
+    (character) => character.id === state.selectedCharacter,
+  );
+
+  if (!messagesContainer || !character) {
+    return;
+  }
+
+  const article = document.createElement("article");
+
+  article.id = "typing-indicator";
+
+  article.className = "message assistant-message typing-message";
+
+  article.innerHTML = `
+    <span class="message-author">
+      ${character.name}
+    </span>
+
+    <div class="typing-dots">
+      <span></span>
+      <span></span>
+      <span></span>
+    </div>
+  `;
+
+  messagesContainer.appendChild(article);
+}
+function removeTypingIndicator() {
+  document.querySelector("#typing-indicator")?.remove();
+}
+function showChatError(message) {
+  const messagesContainer = document.querySelector("#chat-messages");
+
+  if (!messagesContainer) {
+    return;
+  }
+
+  const errorElement = document.createElement("article");
+
+  errorElement.className = "chat-error-message";
+
+  errorElement.textContent = message;
+
+  messagesContainer.appendChild(errorElement);
+
+  scrollChatToBottom();
 }
 
 function scrollChatToBottom() {

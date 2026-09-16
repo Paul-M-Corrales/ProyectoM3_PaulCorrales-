@@ -89,19 +89,19 @@ async function callGemini({ model, systemPrompt, contents }) {
     throw new Error("Gemini model is missing");
   }
 
-  const url =
-    `https://generativelanguage.googleapis.com/v1beta/models/` +
-    `${model}:generateContent?key=${GEMINI_API_KEY}`;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
 
   const response = await fetch(url, {
     method: "POST",
 
     headers: {
       "Content-Type": "application/json",
+
+      "x-goog-api-key": GEMINI_API_KEY,
     },
 
     body: JSON.stringify({
-      system_instruction: {
+      systemInstruction: {
         parts: [
           {
             text: systemPrompt,
