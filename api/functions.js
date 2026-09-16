@@ -1,4 +1,4 @@
-import { getCharacterPrompt } from "../shared/prompts.js";
+import { getCharacterPrompt } from "../src/prompts.js";
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
