@@ -11,7 +11,10 @@ export const characters = [
     ).href,
 
     video: new URL("./assets/videos/howard.mp4", import.meta.url).href,
-
+    chatBackground: new URL(
+      "./assets/images/chat-backgrounds/howard-bg.jpg",
+      import.meta.url,
+    ).href,
     role: {
       es: "Visión, disciplina y legado",
       en: "Vision, discipline and legacy",
@@ -51,7 +54,10 @@ export const characters = [
     ).href,
 
     video: new URL("./assets/videos/tony.mp4", import.meta.url).href,
-
+    chatBackground: new URL(
+      "./assets/images/chat-backgrounds/tony-bg.jpg",
+      import.meta.url,
+    ).href,
     role: {
       es: "Acción, innovación y resolución",
       en: "Action, innovation and problem solving",
@@ -90,7 +96,10 @@ export const characters = [
       .href,
 
     video: new URL("./assets/videos/jarvis.mp4", import.meta.url).href,
-
+    chatBackground: new URL(
+      "./assets/images/chat-backgrounds/jarvis-bg.jpg",
+      import.meta.url,
+    ).href,
     role: {
       es: "Análisis, estrategia y proyección",
       en: "Analysis, strategy and projection",

@@ -38,13 +38,20 @@ export function createAssistantMessage(content) {
   };
 }
 
-export async function sendMessageToAI({ character, language, messages }) {
+export async function sendMessageToAI({
+  character,
+  language,
+  messages,
+  signal,
+}) {
   const response = await fetch("/api/functions", {
     method: "POST",
 
     headers: {
       "Content-Type": "application/json",
     },
+
+    signal,
 
     body: JSON.stringify({
       character,

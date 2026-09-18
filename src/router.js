@@ -13,7 +13,6 @@ import {
   hasAvailableTokens,
   getRemainingTokens,
 } from "./utils.js";
-
 const routes = {
   "/": renderIntro,
   "/home": renderHome,
@@ -59,11 +58,8 @@ export function router() {
 }
 function setupChat() {
   const form = document.querySelector("#chat-form");
-
   const input = document.querySelector("#chat-input");
-
   const messagesContainer = document.querySelector("#chat-messages");
-
   const sendButton = document.querySelector(".chat-send-button");
 
   if (!form || !input || !messagesContainer) {
@@ -80,6 +76,7 @@ function setupChat() {
     if (!content) {
       return;
     }
+
     if (!hasAvailableTokens()) {
       showChatError(
         state.language === "es"
@@ -95,9 +92,13 @@ function setupChat() {
     const userMessage = createUserMessage(content);
 
     addMessage(characterId, userMessage);
+    const characterMedia = document.querySelector("#chat-character-media");
+
+    if (characterMedia) {
+      characterMedia.classList.remove("hidden");
+    }
 
     input.value = "";
-
     input.disabled = true;
 
     if (sendButton) {
@@ -105,10 +106,24 @@ function setupChat() {
     }
 
     renderCurrentConversation();
-
     showTypingIndicator();
-
     scrollChatToBottom();
+
+    const controller = new AbortController();
+
+    const waitingMessages = getWaitingMessages(characterId, state.language);
+
+    const firstDelayMessage = setTimeout(() => {
+      updateWaitingMessage(waitingMessages[0]);
+    }, 4000);
+
+    const secondDelayMessage = setTimeout(() => {
+      updateWaitingMessage(waitingMessages[1]);
+    }, 8000);
+
+    const requestTimeout = setTimeout(() => {
+      controller.abort();
+    }, 12000);
 
     try {
       const conversation = getConversation(characterId);
@@ -117,14 +132,14 @@ function setupChat() {
         character: characterId,
         language: state.language,
         messages: conversation,
+        signal: controller.signal,
       });
+
       const usedTokens = data?.usage?.totalTokens || 0;
 
       if (usedTokens > 0) {
         addTokenUsage(usedTokens);
-
         updateTokenState();
-
         refreshTokenBar();
       }
 
@@ -137,21 +152,29 @@ function setupChat() {
       renderCurrentConversation();
 
       scrollChatToBottom();
-
-      // En el siguiente paso vamos a usar:
-      // data.usage.totalTokens
-      // para actualizar el contador.
     } catch (error) {
-      console.error(error);
-
       removeTypingIndicator();
 
-      showChatError(
-        state.language === "es"
-          ? "No se pudo establecer la conexión temporal. Intentá nuevamente."
-          : "The temporal connection could not be established. Please try again.",
-      );
+      if (error.name === "AbortError") {
+        showChatError(
+          state.language === "es"
+            ? "Wow, esta conexión temporal está tardando demasiado. Volvé a intentarlo en unos instantes para que pueda darte una respuesta como corresponde."
+            : "Wow, this temporal connection is taking too long. Please try again in a moment so I can give you the response you deserve.",
+        );
+      } else {
+        console.error(error);
+
+        showChatError(
+          state.language === "es"
+            ? "La conexión temporal tuvo un problema. Intentá nuevamente en unos segundos."
+            : "The temporal connection encountered a problem. Please try again in a few seconds.",
+        );
+      }
     } finally {
+      clearTimeout(firstDelayMessage);
+      clearTimeout(secondDelayMessage);
+      clearTimeout(requestTimeout);
+
       input.disabled = false;
 
       if (sendButton) {
@@ -223,14 +246,34 @@ function showTypingIndicator() {
       ${character.name}
     </span>
 
-    <div class="typing-dots">
-      <span></span>
-      <span></span>
-      <span></span>
+    <div class="typing-content">
+
+      <div class="typing-dots">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+
+      <p
+        id="waiting-message"
+        class="waiting-message"
+      ></p>
+
     </div>
   `;
 
   messagesContainer.appendChild(article);
+}
+function updateWaitingMessage(message) {
+  const element = document.querySelector("#waiting-message");
+
+  if (!element) {
+    return;
+  }
+
+  element.textContent = message;
+
+  scrollChatToBottom();
 }
 function removeTypingIndicator() {
   document.querySelector("#typing-indicator")?.remove();
@@ -257,9 +300,7 @@ function scrollChatToBottom() {
   requestAnimationFrame(() => {
     const messagesContainer = document.querySelector("#chat-messages");
 
-    if (!messagesContainer) {
-      return;
-    }
+    if (!messagesContainer) return;
 
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
   });
@@ -750,11 +791,9 @@ function renderCharacterChat() {
 
   return `
     <main class="chat-page">
-
       <section class="chat-shell ${character.era}">
 
         <header class="chat-character-header">
-
           <button
             type="button"
             class="change-character-button"
@@ -766,41 +805,52 @@ function renderCharacterChat() {
           </button>
 
           <div>
-            <span class="chat-year">
-              ${character.year}
-            </span>
-
-            <h1>
-              ${character.name}
-            </h1>
-
-            <p>
-              ${character.role[state.language]}
-            </p>
+            <span class="chat-year">${character.year}</span>
+            <h1>${character.name}</h1>
+            <p>${character.role[state.language]}</p>
           </div>
-
         </header>
 
-        <div
-          id="chat-messages"
-          class="chat-messages"
+        <section
+          id="chat-character-media"
+          class="chat-fixed-media ${
+            messages.some((message) => message.role === "assistant")
+              ? ""
+              : "hidden"
+          }"
         >
+          <video
+            class="chat-character-video"
+            autoplay
+            muted
+            loop
+            playsinline
+          >
+            <source src="${character.video}" type="video/mp4" />
+          </video>
+        </section>
 
-          ${
-            messages.length === 0
-              ? renderInitialMessage(character)
-              : messages
-                  .map((message) => renderMessage(message, character))
-                  .join("")
-          }
+        <div class="chat-body">
+          <div class="chat-background-layer" aria-hidden="true">
+            <img
+              src="${character.chatBackground}"
+              alt=""
+              class="chat-background-image"
+            />
+          </div>
 
+          <div id="chat-messages" class="chat-messages">
+            ${
+              messages.length === 0
+                ? renderInitialMessage(character)
+                : messages
+                    .map((message) => renderMessage(message, character))
+                    .join("")
+            }
+          </div>
         </div>
 
-        <form
-          id="chat-form"
-          class="chat-composer"
-        >
-
+        <form id="chat-form" class="chat-composer">
           <input
             id="chat-input"
             type="text"
@@ -821,11 +871,9 @@ function renderCharacterChat() {
           >
             ↑
           </button>
-
         </form>
 
       </section>
-
     </main>
   `;
 }
@@ -874,41 +922,14 @@ function renderMessage(message, character) {
   );
 
   return `
-    <article
-      class="message ${isUser ? "user-message" : "assistant-message"}"
-    >
-
-      ${
-        !isUser
-          ? `
-            <video
-              class="character-response-video"
-              autoplay
-              muted
-              loop
-              playsinline
-            >
-              <source
-                src="${character.video}"
-                type="video/mp4"
-              />
-            </video>
-          `
-          : ""
-      }
-
+    <article class="message ${isUser ? "user-message" : "assistant-message"}">
       <span class="message-author">
         ${isUser ? (state.language === "es" ? "Vos" : "You") : character.name}
       </span>
 
-      <p>
-        ${escapeHTML(message.content)}
-      </p>
+      <p>${escapeHTML(message.content)}</p>
 
-      <time>
-        ${time}
-      </time>
-
+      <time>${time}</time>
     </article>
   `;
 }
@@ -928,7 +949,6 @@ function renderAbout() {
     <main class="about-page">
 
       <section>
-
         <p class="eyebrow">
           CHRONOS // M3
         </p>
@@ -940,9 +960,110 @@ function renderAbout() {
         <p>
           ${t.aboutText}
         </p>
+      </section>
+
+      <section class="developer-section">
+
+        <div class="developer-divider"></div>
+
+        <p class="developer-label">
+          ${
+            state.language === "es"
+              ? "DESARROLLADO Y DISEÑADO POR"
+              : "DEVELOPED AND DESIGNED BY"
+          }
+        </p>
+
+        <h2>
+          Paúl Matías Corrales
+        </h2>
+
+        <p class="developer-description">
+          ${
+            state.language === "es"
+              ? "Full Stack Developer · Diseño, desarrollo y experiencia de usuario de CHRONOS."
+              : "Full Stack Developer · Design, development and user experience of CHRONOS."
+          }
+        </p>
+
+        <div class="developer-links">
+
+          <a
+            href="https://www.linkedin.com/in/paúl-corrales-90957b237?utm_source=share_via&utm_content=profile&utm_medium=member_android"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="LinkedIn de Paúl Matías Corrales"
+            class="developer-link"
+          >
+            <span class="developer-icon">in</span>
+            LinkedIn
+          </a>
+
+          <a
+            href="https://github.com/Paul-M-Corrales"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="GitHub de Paúl Matías Corrales"
+            class="developer-link"
+          >
+            <span class="developer-icon">&lt;/&gt;</span>
+            GitHub
+          </a>
+
+          <a
+            href="mailto:paulmatiascorrales@gmail.com"
+            aria-label="Enviar email a Paúl Matías Corrales"
+            class="developer-link"
+          >
+            <span class="developer-icon">@</span>
+            Gmail
+          </a>
+
+        </div>
 
       </section>
 
     </main>
   `;
+}
+function getWaitingMessages(characterId, language) {
+  const messages = {
+    howard: {
+      es: [
+        "Dame un momento. Estoy organizando estas ideas con los recursos de 1943...",
+        "Interesante. Esto requiere un poco más de cálculo del habitual...",
+      ],
+
+      en: [
+        "Give me a moment. I'm organizing these ideas with the resources of 1943...",
+        "Interesting. This requires a little more calculation than usual...",
+      ],
+    },
+
+    tony: {
+      es: [
+        "Un segundo. Estoy corriendo algunas posibilidades...",
+        "Esto se está poniendo interesante. Dame unos segundos más...",
+      ],
+
+      en: [
+        "One second. I'm running a few possibilities...",
+        "This is getting interesting. Give me a few more seconds...",
+      ],
+    },
+
+    jarvis: {
+      es: [
+        "Permítame analizar los patrones relacionados con su consulta...",
+        "El análisis está requiriendo más variables de las previstas...",
+      ],
+
+      en: [
+        "Allow me to analyze the patterns related to your request...",
+        "The analysis is requiring more variables than anticipated...",
+      ],
+    },
+  };
+
+  return messages[characterId]?.[language] || messages.tony.es;
 }
