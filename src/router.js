@@ -30,6 +30,10 @@ export function router() {
   const app = document.querySelector("#app");
 
   const path = window.location.pathname;
+  app.classList.toggle(
+    "chat-mode",
+    path === "/chat" && Boolean(state.selectedCharacter),
+  );
 
   const isIntroRoute =
     path === "/" ||
