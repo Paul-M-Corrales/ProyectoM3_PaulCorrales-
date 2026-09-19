@@ -16,7 +16,7 @@ La experiencia fue desarrollada bajo un enfoque **Mobile First**, utilizando una
 
 ## 🌐 Demo en producción
 
-👉 **[Abrir CHRONOS](https://proyecto-m3-paul-corrales.vercel.app/)**
+👉 **[Abrir CHRONOS](https://proyecto-m3-paul-corrales.vercel.app/)** https://proyecto-m3-paul-corrales.vercel.app/
 
 ---
 
