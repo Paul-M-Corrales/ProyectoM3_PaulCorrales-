@@ -30,10 +30,12 @@ export function router() {
   const app = document.querySelector("#app");
 
   const path = window.location.pathname;
-  app.classList.toggle(
-    "chat-mode",
-    path === "/chat" && Boolean(state.selectedCharacter),
-  );
+
+  // Estamos dentro del chat de un personaje
+  const isCharacterChat = path === "/chat" && Boolean(state.selectedCharacter);
+
+  // Activa el modo especial de chat para que ocupe todo el espacio disponible
+  app.classList.toggle("chat-mode", isCharacterChat);
 
   const isIntroRoute =
     path === "/" ||
@@ -41,6 +43,7 @@ export function router() {
     path === "/src/" ||
     path === "/src/index.html";
 
+  // INTRO
   if (isIntroRoute) {
     app.innerHTML = renderIntro();
 
@@ -53,10 +56,12 @@ export function router() {
 
   app.innerHTML = `
     ${renderHeader()}
-    ${renderTokenBar()}
+    ${isCharacterChat ? "" : renderTokenBar()}
     ${renderView()}
   `;
-  if (path === "/chat" && state.selectedCharacter) {
+
+  // Inicializa la lógica del chat únicamente cuando hay un personaje seleccionado
+  if (isCharacterChat) {
     setupChat();
   }
 }

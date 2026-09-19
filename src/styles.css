@@ -11,6 +11,13 @@
   background: #05070b;
 }
 
+html,
+body {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
 body {
   min-height: 100vh;
 
@@ -34,15 +41,31 @@ body {
 
 .intro-page {
   position: relative;
-  min-height: 100vh;
+
+  width: 100%;
+  height: 100dvh;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
   overflow: hidden;
+
   background: #000;
 }
 
 .intro-video {
+  display: block;
+
   width: 100%;
-  height: 100vh;
+  height: auto;
+
+  max-width: 100%;
+  max-height: 100dvh;
+
   object-fit: contain;
+  object-position: center;
+
   background: #000;
 }
 
@@ -161,11 +184,13 @@ body {
 }
 
 .home-intro h1 {
-  font-size: clamp(2.8rem, 14vw, 7rem);
+  max-width: 100%;
+
+  font-size: clamp(2.25rem, 12vw, 7rem);
 
   line-height: 0.95;
 
-  letter-spacing: 0.08em;
+  letter-spacing: clamp(0.03em, 1vw, 0.08em);
 }
 
 .home-intro-text {
@@ -448,9 +473,13 @@ a {
   grid-area: logo;
 
   align-self: center;
+  min-width: 0;
 
+  font-size: clamp(0.95rem, 5.6vw, 1.15rem);
   font-weight: 800;
-  letter-spacing: 0.16rem;
+  letter-spacing: clamp(0.08rem, 1vw, 0.16rem);
+
+  white-space: nowrap;
 }
 
 .main-nav {
@@ -472,6 +501,7 @@ a {
 }
 
 .main-nav a {
+  min-width: 0;
   min-height: 38px;
 
   display: flex;
@@ -480,6 +510,9 @@ a {
 
   text-align: center;
 
+  font-size: clamp(0.78rem, 4.3vw, 1rem);
+  white-space: nowrap;
+
   border-radius: 12px;
 }
 
@@ -487,6 +520,12 @@ a {
   grid-area: language;
 
   justify-self: end;
+  min-width: 0;
+
+  display: flex;
+  align-items: center;
+
+  white-space: nowrap;
 }
 
 .language-switch button {
@@ -745,21 +784,21 @@ a {
   color: #8993a4;
 }
 .ai-usage {
-  width: calc(100% - 1rem);
+  width: calc(100% - 2rem);
   max-width: 1390px;
 
-  margin: 0.55rem auto 0;
+  margin: 0.75rem auto 0;
 
-  display: flex;
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
   align-items: center;
 
-  gap: 0.65rem;
+  gap: 0.75rem;
 
-  padding: 0.55rem 0.65rem;
+  padding: 0.75rem;
 
   border: 1px solid rgba(100, 150, 255, 0.14);
-
-  border-radius: 16px;
+  border-radius: 18px;
 
   background: rgba(9, 18, 35, 0.88);
 
@@ -767,76 +806,74 @@ a {
 }
 
 .ai-usage-icon {
-  flex: 0 0 38px;
-
-  width: 38px;
-  height: 38px;
+  width: 44px;
+  height: 44px;
 
   display: grid;
   place-items: center;
 
   border: 1px solid rgba(77, 152, 255, 0.25);
-
-  border-radius: 10px;
+  border-radius: 12px;
 
   background: rgba(56, 126, 255, 0.08);
 
   color: #67c7ff;
-
   font-size: 1rem;
 }
 
 .ai-usage-content {
-  flex: 1;
+  width: 100%;
   min-width: 0;
 }
 
 .ai-usage-header {
+  width: 100%;
+
   display: flex;
-  flex-direction: row;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
 
-  gap: 0.35rem;
+  gap: 0.4rem;
 
-  margin-bottom: 0.3rem;
+  margin-bottom: 0.45rem;
 }
 
 .ai-usage-title {
+  min-width: 0;
+
   display: flex;
   flex-wrap: wrap;
   align-items: center;
 
-  gap: 0.35rem;
+  gap: 0.4rem;
 
-  font-size: 0.72rem;
+  font-size: clamp(0.68rem, 3.5vw, 0.78rem);
   font-weight: 700;
 }
 
 .ai-status {
-  padding: 0.2rem 0.45rem;
+  padding: 0.22rem 0.45rem;
 
   border: 1px solid rgba(50, 220, 170, 0.22);
-
   border-radius: 999px;
 
   background: rgba(32, 180, 136, 0.08);
-
   color: #76e2bd;
 
-  font-size: 0.62rem;
+  font-size: clamp(0.58rem, 3vw, 0.68rem);
 }
 
 .ai-usage-numbers {
-  width: 100%;
+  min-width: 0;
 
   display: flex;
   align-items: center;
-  justify-content: space-between;
 
-  gap: 0.35rem;
+  gap: 0.3rem;
 
-  font-size: 0.78rem;
+  font-size: clamp(0.7rem, 3.4vw, 0.82rem);
+  white-space: nowrap;
 }
 
 .ai-usage-numbers strong {
@@ -844,14 +881,11 @@ a {
 }
 
 .ai-percentage {
-  margin-left: 0;
-
   padding: 0.2rem 0.45rem;
 
   border-radius: 8px;
 
   background: rgba(84, 136, 255, 0.08);
-
   color: #9abaff !important;
 }
 
@@ -877,18 +911,21 @@ a {
 }
 
 .ai-usage-footer {
+  min-width: 0;
+
   display: flex;
-  flex-direction: row;
+  flex-wrap: wrap;
   justify-content: space-between;
 
-  gap: 0.5rem;
+  gap: 0.25rem 0.5rem;
 
-  margin-top: 0.25rem;
+  margin-top: 0.35rem;
 
   color: #657087;
 
-  font-size: 0.62rem;
+  font-size: clamp(0.58rem, 2.9vw, 0.68rem);
 }
+
 /* =========================
    CHARACTER SELECTION
 ========================= */
@@ -1025,11 +1062,10 @@ a {
 
 /*
   En la vista de chat, la aplicación ocupa exactamente el viewport.
-  Header + tokens conservan su tamaño y SOLO la conversación puede scrollear.
+  Header conserva su tamaño y SOLO la conversación puede scrollear.
 */
 #app:has(> .chat-page) {
   height: 100dvh;
-  min-height: 0;
 
   display: flex;
   flex-direction: column;
@@ -1045,12 +1081,9 @@ a {
 .chat-page {
   flex: 1 1 auto;
 
-  width: 100%;
   min-height: 0;
 
   display: flex;
-
-  padding: 0.35rem 0.5rem 0.5rem;
 
   overflow: hidden;
 }
@@ -1660,17 +1693,64 @@ a {
    MEDIAQUERIES
 ========================= */
 
-@media (max-width: 480px) {
+/* AJUSTES MOBILE-FIRST */
+
+.main-header,
+.home-page,
+.chat-selection-page,
+.about-page,
+.character-selection-page,
+.chat-page {
+  width: 100%;
+  max-width: 100%;
+}
+
+.home-page,
+.chat-selection-page,
+.about-page,
+.character-selection-page {
+  overflow-x: hidden;
+}
+
+.hero,
+.home-intro,
+.showcase-heading,
+.character-grid,
+.character-selection-header {
+  min-width: 0;
+  max-width: 100%;
+}
+
+@media (min-width: 480px) {
+  .main-header {
+    padding-inline: 1.25rem;
+  }
+
   .intro-controls {
-    right: 1rem;
-    bottom: 7rem;
+    right: 1.25rem;
+    bottom: 2rem;
+  }
+
+  .ai-usage {
+    width: calc(100% - 2.5rem);
   }
 }
 
 /* TABLET */
 @media (min-width: 768px) {
   .intro-video {
+    width: 100%;
+    height: 100dvh;
+
+    max-height: none;
+
     object-fit: cover;
+    object-position: center;
+  }
+
+  .intro-controls {
+    right: 1.5rem;
+    bottom: 2rem;
   }
 
   /* HEADER */
@@ -1725,23 +1805,32 @@ a {
   /* TOKENS */
 
   .ai-usage {
+    grid-template-columns: 48px minmax(0, 1fr);
+
     margin-top: 0.65rem;
-    padding: 0.6rem 0.75rem;
+    padding: 0.7rem 0.85rem;
+  }
+
+  .ai-usage-icon {
+    width: 48px;
+    height: 48px;
+  }
+
+  .ai-usage-header {
+    flex-wrap: nowrap;
   }
 
   .ai-usage-title {
-    font-size: 0.76rem;
+    font-size: 0.8rem;
   }
 
   .ai-status {
-    font-size: 0.64rem;
+    font-size: 0.7rem;
   }
 
   .ai-usage-numbers {
-    width: auto;
-    justify-content: flex-end;
-
-    font-size: 0.82rem;
+    margin-left: auto;
+    font-size: 0.86rem;
   }
 
   .ai-percentage {
@@ -1749,7 +1838,7 @@ a {
   }
 
   .ai-usage-footer {
-    font-size: 0.64rem;
+    font-size: 0.7rem;
   }
 
   /* HOME */
