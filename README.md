@@ -173,3 +173,506 @@ En los chats eliminé la barra visual de consumo de tokens para aprovechar mejor
 Para la introducción se ajustó el comportamiento del video según el viewport, buscando mantener una experiencia adecuada tanto en dispositivos móviles como en pantallas de mayor tamaño.
 
 La decisión principal fue evitar alturas fijas innecesarias y utilizar Flexbox, unidades relativas y media queries para que la interfaz se adapte a diferentes resoluciones sin modificar la funcionalidad de la aplicación.
+
+---
+
+# 🛠️ Tecnologías utilizadas
+
+### Frontend
+
+- HTML5
+- CSS3
+- JavaScript ES Modules
+- History API
+- Fetch API
+- localStorage
+- Flexbox
+- CSS Grid
+
+### Inteligencia Artificial
+
+- Google Gemini API
+- System Prompts personalizados
+- Historial de conversación enviado como contexto
+- Sistema de modelos fallback
+
+### Backend
+
+- Node.js
+- Vercel Serverless Functions
+
+### Testing
+
+- Vitest
+- Mocks de `fetch`
+
+### Deployment y control de versiones
+
+- Vercel
+- Git
+- GitHub
+
+---
+
+# 🧠 Arquitectura del proyecto
+
+CHRONOS fue desarrollado utilizando una arquitectura modular, separando la interfaz, el routing, la lógica del chat, el estado, los personajes y la comunicación con inteligencia artificial.
+
+El flujo principal de la aplicación es:
+
+```text
+┌─────────────────────────┐
+│        Frontend         │
+│    HTML / CSS / JS      │
+└────────────┬────────────┘
+             │
+             │ POST /api/functions
+             ▼
+┌─────────────────────────┐
+│   Vercel Serverless     │
+│       Function          │
+│   /api/functions.js     │
+└────────────┬────────────┘
+             │
+             │ API Key protegida
+             ▼
+┌─────────────────────────┐
+│      Google Gemini      │
+│          API            │
+└────────────┬────────────┘
+             │
+             │ Respuesta
+             ▼
+┌─────────────────────────┐
+│        CHRONOS          │
+│     Interfaz de Chat    │
+└─────────────────────────┘
+```
+
+La API Key de Gemini nunca es enviada al navegador.
+
+La comunicación con Gemini se realiza exclusivamente desde la Serverless Function, utilizando variables de entorno del servidor.
+
+---
+
+# 🔄 Flujo de una conversación
+
+El flujo de una conversación dentro de CHRONOS es:
+
+```text
+1. El usuario selecciona una época
+        ↓
+2. CHRONOS selecciona el personaje correspondiente
+        ↓
+3. Se carga su conversación
+        ↓
+4. El usuario escribe un mensaje
+        ↓
+5. El frontend agrega el mensaje al historial
+        ↓
+6. Se envían personaje + idioma + historial a /api/functions
+        ↓
+7. La Serverless Function obtiene el System Prompt correspondiente
+        ↓
+8. La función realiza la solicitud a Google Gemini
+        ↓
+9. Gemini genera la respuesta manteniendo el contexto
+        ↓
+10. La Serverless Function devuelve la respuesta al frontend
+        ↓
+11. CHRONOS agrega la respuesta al historial
+        ↓
+12. La interfaz actualiza la conversación
+```
+
+Cada personaje mantiene un historial independiente durante la sesión.
+
+En cada nueva consulta se envía el historial correspondiente para que Gemini pueda mantener el contexto de la conversación.
+
+---
+
+# 🧭 Routing SPA
+
+CHRONOS utiliza **History API** para implementar navegación SPA sin recargar completamente la página.
+
+### Rutas principales
+
+| Ruta     | Vista                        |
+| -------- | ---------------------------- |
+| `/`      | Introducción cinematográfica |
+| `/home`  | Inicio                       |
+| `/chat`  | Selección de época / Chat    |
+| `/about` | Acerca de                    |
+
+La navegación utiliza:
+
+- `history.pushState()`
+- evento `popstate`
+- renderizado dinámico
+- tabla de rutas
+
+Esto permite navegar entre las diferentes vistas manteniendo el comportamiento esperado de los botones **Atrás** y **Adelante** del navegador.
+
+Vercel también está configurado para redirigir las rutas de la SPA hacia `index.html`, evitando errores 404 cuando una ruta como `/chat` o `/about` se abre directamente.
+
+---
+
+# 📱 Responsive Design
+
+CHRONOS fue desarrollado siguiendo un enfoque **Mobile First**.
+
+Los estilos base están diseñados primero para dispositivos móviles y posteriormente se amplían para resoluciones mayores mediante media queries.
+
+Los principales breakpoints utilizados son:
+
+```css
+@media (min-width: 768px);
+```
+
+y:
+
+```css
+@media (min-width: 1100px);
+```
+
+### 📱 Mobile
+
+En dispositivos móviles:
+
+- La navegación se adapta al ancho disponible.
+- La introducción utiliza el viewport disponible.
+- Los carruseles se adaptan a pantallas pequeñas.
+- El chat aprovecha el espacio vertical disponible.
+- El historial utiliza scroll interno.
+- El campo de escritura permanece accesible.
+- Las imágenes y videos respetan los límites de la pantalla.
+
+### 📲 Tablet
+
+A partir de `768px`:
+
+- Se amplían los espacios y dimensiones de los componentes.
+- Las imágenes de fondo del chat aprovechan mejor el área disponible.
+- Los videos y contenidos multimedia aumentan de tamaño.
+- Se mantiene la estructura SPA sin modificar la funcionalidad.
+
+### 🖥️ Desktop
+
+En escritorio:
+
+- CHRONOS aprovecha el espacio horizontal disponible.
+- Los chats utilizan una superficie de conversación más amplia.
+- Los carruseles presentan los personajes con mayor presencia visual.
+- Header, contenido y controles mantienen una distribución consistente.
+
+---
+
+# 📁 Estructura del proyecto
+
+```text
+M3/
+│
+├── api/
+│   └── functions.js
+│
+├── src/
+│   ├── assets/
+│   │   ├── images/
+│   │   │   ├── carousels/
+│   │   │   ├── characters/
+│   │   │   ├── chat-backgrounds/
+│   │   │   └── prompts/
+│   │   │
+│   │   └── videos/
+│   │
+│   ├── app.js
+│   ├── characters.js
+│   ├── chat.js
+│   ├── prompts.js
+│   ├── router.js
+│   ├── state.js
+│   ├── styles.css
+│   ├── translations.js
+│   └── utils.js
+│
+├── tests/
+│   └── chat.test.js
+│
+├── .env.example
+├── .gitignore
+├── index.html
+├── package.json
+├── package-lock.json
+├── README.md
+└── vercel.json
+```
+
+### Responsabilidad de los principales archivos
+
+- `index.html` — Punto de entrada de la SPA.
+- `src/app.js` — Renderizado y comportamiento principal de la interfaz.
+- `src/router.js` — Routing SPA mediante History API.
+- `src/chat.js` — Lógica de conversación y comunicación con el backend.
+- `src/characters.js` — Configuración y datos de los personajes.
+- `src/prompts.js` — System Prompts utilizados por cada personaje.
+- `src/state.js` — Estado compartido de la aplicación.
+- `src/translations.js` — Textos y traducciones ES/EN.
+- `src/utils.js` — Funciones auxiliares reutilizables.
+- `src/styles.css` — Diseño visual y responsive.
+- `api/functions.js` — Serverless Function encargada de comunicarse con Gemini.
+- `tests/chat.test.js` — Tests automatizados del funcionamiento del chat.
+- `vercel.json` — Configuración necesaria para el deployment y routing SPA.
+
+---
+
+# ⚙️ Instalación
+
+Para ejecutar CHRONOS localmente es necesario tener instalado **Node.js** y **npm**.
+
+## 1. Clonar el repositorio
+
+```bash
+git clone https://github.com/Paul-M-Corrales/ProyectoM3_PaulCorrales-.git
+```
+
+## 2. Ingresar al proyecto
+
+```bash
+cd ProyectoM3_PaulCorrales-
+```
+
+## 3. Instalar las dependencias
+
+```bash
+npm install
+```
+
+---
+
+# 🔐 Variables de entorno
+
+Crear un archivo `.env` en la raíz del proyecto tomando como referencia `.env.example`.
+
+```env
+GEMINI_API_KEY=tu_api_key
+GEMINI_MODEL_PRIMARY=nombre_del_modelo_principal
+GEMINI_MODEL_SECONDARY=nombre_del_modelo_secundario
+GEMINI_MODEL_FALLBACK=nombre_del_modelo_fallback
+```
+
+La API Key de Gemini **nunca debe estar expuesta en el frontend ni subirse al repositorio**.
+
+El archivo `.env` se encuentra excluido del control de versiones mediante `.gitignore`.
+
+La Serverless Function obtiene las variables mediante `process.env`, manteniendo las credenciales del lado del servidor.
+
+---
+
+# ▶️ Ejecutar la aplicación localmente
+
+CHRONOS utiliza una Vercel Serverless Function, por lo que para reproducir localmente tanto el frontend como el backend se recomienda utilizar **Vercel CLI**.
+
+Si Vercel CLI no está instalado:
+
+```bash
+npm install -g vercel
+```
+
+Luego ejecutar desde la raíz del proyecto:
+
+```bash
+vercel dev
+```
+
+Vercel iniciará el entorno local y mostrará en la terminal la URL disponible, normalmente:
+
+```text
+http://localhost:3000
+```
+
+> Abrir únicamente `index.html` o utilizar Live Server permite visualizar el frontend, pero no reproduce por sí solo el entorno Serverless necesario para la comunicación con Gemini.
+
+Para utilizar las funciones de inteligencia artificial es necesario configurar una API Key válida de Gemini en el archivo `.env`.
+
+---
+
+# 🧪 Testing
+
+CHRONOS utiliza **Vitest** para realizar tests automatizados.
+
+Para ejecutar la suite de tests:
+
+```bash
+npm run test:run
+```
+
+Los tests permiten verificar la lógica de comunicación del chat de forma aislada.
+
+Las solicitudes externas pueden ser simuladas mediante mocks de `fetch`, evitando depender de una llamada real a Gemini durante las pruebas.
+
+Esto permite comprobar el comportamiento de la aplicación tanto ante respuestas correctas como ante situaciones de error.
+
+---
+
+# 🛡️ Seguridad
+
+La seguridad de la API Key fue una consideración central en la arquitectura de CHRONOS.
+
+La aplicación sigue este principio:
+
+```text
+Frontend
+   ✕
+API Key
+
+Frontend
+   ↓
+Serverless Function
+   ↓
+API Key
+   ↓
+Gemini
+```
+
+La clave:
+
+- No se encuentra escrita en el frontend.
+- No forma parte del repositorio público.
+- No se incluye en `.env.example`.
+- El archivo `.env` está excluido mediante `.gitignore`.
+- En producción se configura como variable de entorno en Vercel.
+- Las llamadas autenticadas a Gemini se realizan desde `/api/functions.js`.
+
+---
+
+# ⚠️ Manejo de errores y demoras
+
+CHRONOS contempla posibles problemas durante la comunicación con Gemini.
+
+La aplicación implementa:
+
+- Manejo de errores HTTP y de conexión.
+- Estados visuales mientras se espera una respuesta.
+- Mensajes temporales cuando la respuesta demora más de lo esperado.
+- Timeout para evitar esperas indefinidas.
+- Mensaje de error comprensible para el usuario.
+- Sistema de modelos alternativos o fallback.
+
+Si una solicitud no puede completarse correctamente, la interfaz informa al usuario sin bloquear el funcionamiento general de la aplicación.
+
+---
+
+# 🔁 Sistema de modelos fallback
+
+La integración con Gemini permite configurar diferentes modelos mediante variables de entorno:
+
+```env
+GEMINI_MODEL_PRIMARY=
+GEMINI_MODEL_SECONDARY=
+GEMINI_MODEL_FALLBACK=
+```
+
+Esto desacopla la selección de modelos del código fuente.
+
+La Serverless Function puede intentar utilizar los modelos configurados según su prioridad, permitiendo disponer de alternativas ante determinados problemas con el modelo principal.
+
+Los nombres de los modelos pueden modificarse desde las variables de entorno sin necesidad de alterar la lógica del frontend.
+
+---
+
+# 💾 Estado e historial de conversación
+
+CHRONOS mantiene conversaciones independientes para:
+
+- Howard Stark
+- Tony Stark
+- J.A.R.V.I.S.
+
+Los mensajes se almacenan durante la ejecución de la aplicación y el historial correspondiente se envía en cada solicitud a Gemini.
+
+Esto es necesario porque cada petición HTTP es independiente: para que el personaje pueda comprender el contexto de la conversación, CHRONOS vuelve a enviar los mensajes anteriores junto con la nueva consulta.
+
+Además, `localStorage` se utiliza para conservar determinadas preferencias de la experiencia, como configuraciones seleccionadas por el usuario.
+
+---
+
+# 🚀 Deployment
+
+CHRONOS está desplegado en **Vercel**.
+
+### Producción
+
+https://proyecto-m3-paul-corrales.vercel.app/
+
+El deployment incluye:
+
+- Frontend SPA.
+- Vercel Serverless Function.
+- Variables de entorno.
+- Routing para `/home`, `/chat` y `/about`.
+- Integración con Google Gemini.
+
+Las credenciales utilizadas en producción se encuentran configuradas directamente en Vercel y no forman parte del repositorio.
+
+---
+
+# 🧩 Conceptos aplicados
+
+Durante el desarrollo de CHRONOS se aplicaron conceptos trabajados durante el Módulo 3:
+
+- Single Page Applications.
+- DOM y renderizado dinámico.
+- Responsive Design.
+- Mobile First.
+- Flexbox.
+- CSS Grid.
+- Media Queries.
+- JavaScript modular.
+- ES Modules.
+- Eventos.
+- History API.
+- `pushState`.
+- `popstate`.
+- JavaScript asíncrono.
+- Promises.
+- `async / await`.
+- Fetch API.
+- Manejo de respuestas HTTP.
+- Integración con APIs de Inteligencia Artificial.
+- System Prompts.
+- Manejo de contexto conversacional.
+- API Keys.
+- Variables de entorno.
+- Vercel Serverless Functions.
+- Manejo de errores.
+- AbortController y timeout.
+- `localStorage`.
+- Testing unitario.
+- Mocks.
+- Git y GitHub.
+- Deployment en Vercel.
+
+---
+
+# 🎓 Proyecto Integrador — Henry
+
+CHRONOS fue desarrollado como **Proyecto Integrador del Módulo 3 de Henry Full Stack Developer**.
+
+El objetivo del proyecto fue integrar los conocimientos adquiridos durante el módulo mediante el desarrollo de una SPA funcional que combina navegación del lado del cliente, consumo de APIs, inteligencia artificial, programación asíncrona, diseño responsive, testing y deployment.
+
+El proyecto fue diseñado buscando no solamente cumplir con los requerimientos técnicos, sino también construir una experiencia visual y narrativa propia.
+
+---
+
+# 👨‍💻 Autor
+
+**Paúl Matías Corrales**
+
+Full Stack Developer
+
+Proyecto Integrador — Módulo 3  
+Henry Full Stack Developer
+
+- GitHub: https://github.com/Paul-M-Corrales
+- LinkedIn: https://www.linkedin.com/in/paúl-corrales-90957b237
+- Email: paulmatiascorrales@gmail.com
